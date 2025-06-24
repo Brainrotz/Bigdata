@@ -1,0 +1,117 @@
+import yt_dlp
+import librosa
+import os
+import csv
+import uuid
+
+def download_audio_from_youtube(url, output_dir="downloads"):
+    os.makedirs(output_dir, exist_ok=True)
+    unique_id = str(uuid.uuid4())
+    output_template = os.path.join(output_dir, f"{unique_id}.%(ext)s")
+    mp3_path = os.path.join(output_dir, f"{unique_id}.mp3")
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': output_template,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'quiet': True
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+
+    return mp3_path
+
+def get_bpm(file_path):
+    try:
+        y, sr = librosa.load(file_path, sr=None, mono=True)
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+        tempo = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
+        return round(float(tempo[0]), 2)
+    except Exception as e:
+        print(f"Error processing '{file_path}': {e}")
+        return None
+
+def analyze_youtube_links(url_list, output_csv="mellow_bpm_results.csv", cleanup=True):
+    results = []
+
+    for url in url_list:
+        print(f"🔍 Downloading and analyzing: {url}")
+        try:
+            mp3_path = download_audio_from_youtube(url)
+            bpm = get_bpm(mp3_path)
+            if bpm:
+                results.append([url, bpm])
+            if cleanup and os.path.exists(mp3_path):
+                os.remove(mp3_path)
+        except Exception as e:
+            print(f"❌ Failed for {url}: {e}")
+
+    # Save to CSV
+    with open(output_csv, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["YouTube URL", "BPM"])
+        writer.writerows(results)
+
+    print(f"\n✅ BPM analysis complete. Results saved to: {output_csv}")
+
+if __name__ == "__main__":
+    youtube_links = [
+        "https://www.youtube.com/watch?v=nyAz4NdxwFM&ab_channel=MachineGirl-Topic",
+        "https://www.youtube.com/watch?v=fr-NzPvsE9c&ab_channel=SouthArcade-Topic",
+        "https://www.youtube.com/watch?v=dGgBzSfgVsA&ab_channel=lilboat",
+        "https://www.youtube.com/watch?v=ZGT6UysCA4k&ab_channel=SunsetSounds",
+        "https://www.youtube.com/watch?v=f8X8v8F4qPI&ab_channel=UniqueVibes",
+        "https://www.youtube.com/watch?v=rOnxmiaUQK0&ab_channel=slickprd",
+        "https://www.youtube.com/watch?v=xjoBP7SDgaY&ab_channel=TheGoodVibe",
+        "https://www.youtube.com/watch?v=Qa1IaUywiO8&ab_channel=Genius",
+        "https://www.youtube.com/watch?v=wlc7cikBpg4&ab_channel=MassiveAttack-Topic",
+        "https://www.youtube.com/watch?v=NQEI03FlJjw&ab_channel=Oklou",
+        "https://www.youtube.com/watch?v=STP4cCpyScE&ab_channel=OklouVEVO",
+        "https://www.youtube.com/watch?v=X-lUnbIKYlo&ab_channel=MassiveAttack-Topic",
+        "https://www.youtube.com/watch?v=n-V3MUm-jbE&ab_channel=DavidDeanBurkhart",
+        "https://www.youtube.com/watch?v=81chcuuok-4&ab_channel=KingKrule-Topic",
+        "youtube.com/watch?v=8IUCrbNNNmY",
+        "https://www.youtube.com/watch?v=bnHkTCmZMMs&ab_channel=SummerSoul",
+        "https://www.youtube.com/watch?v=KPAub0hNtY4&ab_channel=StellaJang-Topic",
+        "https://www.youtube.com/watch?v=8qzeP-FBJHI&ab_channel=BaroqueFestivalOrchestra-Topic",
+        "https://www.youtube.com/watch?v=RiESu1LNosE&ab_channel=HALIDONMUSIC",
+        "https://www.youtube.com/watch?v=RIck7OCm6UU&ab_channel=BerlinPhilharmonicOrchestra-Topic",
+        "https://www.youtube.com/watch?v=UJ6IwMg0wz8&ab_channel=MajesticCasual",
+        "https://www.youtube.com/watch?v=TO7Urj_2MU0&ab_channel=KingKrule",
+        "https://www.youtube.com/watch?v=SHP-xh5NnVs&ab_channel=DanielCaesarVEVO",
+        "https://www.youtube.com/watch?v=Bs4MffKz9rk&ab_channel=AdrianneLenker",
+        "https://www.youtube.com/watch?v=tL70ke4a1og&ab_channel=LeithRoss",
+        "https://www.youtube.com/watch?v=hQ5x8pHoIPA&ab_channel=Nujabes",
+        "https://www.youtube.com/watch?v=woz5qvDdMRM&ab_channel=Lyn-Topic",
+        "youtube.com/watch?v=GTesXj_27EE",
+        "https://www.youtube.com/watch?v=lKcy4hLvzgI&ab_channel=ShihokoHirata-Topic",
+        "https://www.youtube.com/watch?v=IRQS0GEDX-Q&ab_channel=2Mello",
+        "https://www.youtube.com/watch?v=urxeNbBc1nk&ab_channel=vivivivivi",
+        "https://www.youtube.com/watch?v=Cjp6RVrOOW0&ab_channel=7clouds",
+        "youtube.com/watch?v=EzIuD5OhRGU",
+        "https://www.youtube.com/watch?v=LanCLS_hIo4&ab_channel=AwMan",
+        "https://www.youtube.com/watch?v=zk62uUqcNyo&ab_channel=Funnyferal",
+        "https://www.youtube.com/watch?v=QkF3oxziUI4&ab_channel=LedZeppelin",
+        "youtube.com/watch?v=CHBnW5KKhmY",
+        "https://www.youtube.com/watch?v=80RtBeB61LE&ab_channel=TOOLVEVO",
+        "youtube.com/watch?v=9HEdLmbZoJQ",
+        "https://www.youtube.com/watch?v=Ku3bMyiINxc&ab_channel=Chase%26Status-Topic",
+        "https://www.youtube.com/watch?v=sABVNz31WA0&ab_channel=LyricsZone",
+        "https://www.youtube.com/watch?v=AIOAlaACuv4&ab_channel=TracyChapman",
+        "https://www.youtube.com/watch?v=OAVZuSoP8dk&ab_channel=EllaFitzgeraldVEVO",
+        "youtube.com/watch?v=1jNNwbuDXsA",
+        "youtube.com/watch?v=bhSB8EEnCAM",
+        "https://www.youtube.com/watch?v=65EfTFUFDwI&ab_channel=FaithlessVEVO",
+        "https://www.youtube.com/watch?v=mCgr98fm85E&ab_channel=7clouds",
+        "https://www.youtube.com/watch?v=yJE1_Jm6gtw&ab_channel=ThePendulumMusic",
+        "https://www.youtube.com/watch?v=9JipeXR2WzM&ab_channel=Madonna-Topic",
+        "https://www.youtube.com/watch?v=Yk5AfIo46eM&ab_channel=DJSammy-Topic"
+        # Add more links here
+    ]
+
+    analyze_youtube_links(youtube_links)
